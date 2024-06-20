@@ -5,7 +5,7 @@
   </picture>
 </a>
 
-# Arcjet example app
+# Arcjet + Fly.io example app
 
 [Arcjet](https://arcjet.com) helps developers protect their apps in just a few
 lines of code. This is an example application demonstrating the use of multiple
@@ -29,14 +29,44 @@ This example is deployed at
   Shield, which detects suspicious behavior, such as SQL injection and
   cross-site scripting attacks.
 
-## Deploy it now
+##  Deploy to Fly.io
 
-[![Deploy with
-Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farcjet%2Farcjet-js-example&project-name=arcjet-example&repository-name=arcjet-example&developer-id=oac_1GEcKBuKBilVnjToj1QUwdb8&demo-title=Arcjet%20Example%20&demo-description=Example%20rate%20limiting%2C%20bot%20protection%2C%20email%20verification%20%26%20form%20protection.&demo-url=https%3A%2F%2Fgithub.com%2Farcjet%2Farcjet-js-example&demo-image=https%3A%2F%2Fapp.arcjet.com%2Fimg%2Fexample-apps%2Fvercel%2Fdemo-image.jpg&integration-ids=oac_1GEcKBuKBilVnjToj1QUwdb8&external-id=arcjet-js-example)
+1. Set up a new Fly.io app
+
+```bash
+fly launch --name $YOUR_APP_NAME --no-deploy
+```
+
+Replace `$YOUR_APP_NAME` with whatever name you'd like. This command will
+generate a `Dockerfile` and a `fly.toml` for you.
+
+2. Create an Arcjet account and link it to your Fly.io app:
+
+```bash
+fly ext arcjet create
+```
+
+3. Deploy to Fly.io:
+
+```bash
+fly deploy
+```
+
+4. Open your app in your browser and try out the features.
+
+5. Review the request details in your Arcjet dashboard:
+
+```bash
+fly ext arcjet dashboard
+```
 
 ## Run locally
 
-1. [Register for a free Arcjet account](https://app.arcjet.com).
+1. Log into your Arcjet dashboard to get the `ARCJET_KEY` for your app.
+
+```bash
+fly ext arcjet dashboard
+```
 
 2. Install dependencies:
 
@@ -67,4 +97,4 @@ npm run dev
   example](https://github.com/arcjet/arcjet-js/tree/main/examples/nextjs-14-react-hook-form))
 - Client-side validation: [Zod](https://zod.dev/)
 - Security: [Arcjet](https://arcjet.com/)
-- Platform: [Vercel](https://vercel.com/) (see [our integration](https://vercel.com/integrations/arcjet))
+- Platform: [Fly.io](https://fly.io/)

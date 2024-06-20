@@ -13,7 +13,9 @@ export function MainNav({ items }: MainNavProps) {
     <div className="flex gap-6 md:gap-10">
       <Link href="/" className="flex items-center space-x-2">
         <LogoMarkSpark className="size-[24.4px]" />
-        <span className="inline-block font-bold">Arcjet Example App</span>
+        <span className="inline-block font-bold">
+          Arcjet + Fly.io Example App
+        </span>
       </Link>
       {items?.length ? (
         <nav className="flex gap-6">
