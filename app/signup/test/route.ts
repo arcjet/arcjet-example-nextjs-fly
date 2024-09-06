@@ -17,7 +17,7 @@ const aj = arcjet.withRule(
     bots: {
       mode: "LIVE",
       // Block clients that we are sure are automated
-      block: ["AUTOMATED"],
+      allow: [],
     },
     // It would be unusual for a form to be submitted more than 5 times in 10
     // minutes from the same IP address
@@ -27,7 +27,7 @@ const aj = arcjet.withRule(
       interval: "2m", // counts requests over a 10 minute sliding window
       max: 5, // allows 5 submissions within the window
     },
-  })
+  }),
 );
 
 export async function POST(req: Request) {
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       }
 
       if (decision.ip.hasCountry()) {
-        message += ` PS: Hello from ${decision.ip.country}.`;
+        message += ` PS: Hello to you in ${decision.ip.countryName}!`;
       }
 
       return NextResponse.json(

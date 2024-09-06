@@ -8,8 +8,10 @@ export const dynamic = "force-dynamic";
 const aj = arcjet.withRule(
   detectBot({
     mode: "LIVE", // will block requests. Use "DRY_RUN" to log only
-    block: ["AUTOMATED"], // blocks all automated clients
-  })
+    // configured with a list of bots to allow from
+    // https://arcjet.com/bot-list
+    allow: [], // blocks all automated clients
+  }),
 );
 
 export async function GET(req: Request) {
