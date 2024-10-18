@@ -1,9 +1,9 @@
-import { SiteHeader } from "@/components/site-header";
+import { SiteHeader } from "@/components/SiteHeader";
 import { ThemeProvider } from "@/components/theme-provider";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
-import "@/styles/globals.css";
+import "@/styles/globals.scss";
 import type { Viewport } from "next";
 import { Metadata } from "next";
 
@@ -20,7 +20,6 @@ export const metadata: Metadata = {
     template: `%s - ${siteConfig.name}`,
   },
   description: siteConfig.description,
-
   icons: [
     {
       rel: "icon",
@@ -45,7 +44,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <>
       <html lang="en" suppressHydrationWarning>
-        <head />
         <body
           className={cn(
             "min-h-screen bg-background font-sans antialiased",

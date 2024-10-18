@@ -1,36 +1,46 @@
-import { formSchema } from "@/lib/formSchema";
-import arcjet, { protectSignup } from "@/lib/arcjet";
-import { NextResponse } from "next/server";
+import { formSchema } from "@/app/signup/schema";
+import arcjet, { protectSignup, shield } from "@/lib/arcjet";
+import { NextRequest, NextResponse } from "next/server";
 
 // Add rules to the base Arcjet instance outside of the handler function
-const aj = arcjet.withRule(
-  // Arcjet's protectSignup rule is a combination of email validation, bot
-  // protection and rate limiting. Each of these can also be used separately
-  // on other routes e.g. rate limiting on a login route. See
-  // https://docs.arcjet.com/get-started
-  protectSignup({
-    email: {
-      mode: "LIVE", // will block requests. Use "DRY_RUN" to log only
-      // Block emails that are disposable, invalid, or have no MX records
-      block: ["DISPOSABLE", "INVALID", "NO_MX_RECORDS"],
-    },
-    bots: {
+const aj = arcjet
+  .withRule(
+    // Arcjet's protectSignup rule is a combination of email validation, bot
+    // protection and rate limiting. Each of these can also be used separately
+    // on other routes e.g. rate limiting on a login route. See
+    // https://docs.arcjet.com/get-started
+    protectSignup({
+      email: {
+        mode: "LIVE", // will block requests. Use "DRY_RUN" to log only
+        // Block emails that are disposable, invalid, or have no MX records
+        block: ["DISPOSABLE", "INVALID", "NO_MX_RECORDS"],
+      },
+      bots: {
+        mode: "LIVE",
+        // configured with a list of bots to allow from
+        // https://arcjet.com/bot-list
+        allow: [], // prevents bots from submitting the form
+      },
+      // It would be unusual for a form to be submitted more than 5 times in 10
+      // minutes from the same IP address
+      rateLimit: {
+        // uses a sliding window rate limit
+        mode: "LIVE",
+        interval: "2m", // counts requests over a 10 minute sliding window
+        max: 5, // allows 5 submissions within the window
+      },
+    }),
+  )
+  // You can chain multiple rules, so we'll include shield
+  .withRule(
+    // Shield detects suspicious behavior, such as SQL injection and cross-site
+    // scripting attacks.
+    shield({
       mode: "LIVE",
-      // Block clients that we are sure are automated
-      allow: [],
-    },
-    // It would be unusual for a form to be submitted more than 5 times in 10
-    // minutes from the same IP address
-    rateLimit: {
-      // uses a sliding window rate limit
-      mode: "LIVE",
-      interval: "2m", // counts requests over a 10 minute sliding window
-      max: 5, // allows 5 submissions within the window
-    },
-  }),
-);
+    }),
+  );
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const json = await req.json();
   const data = formSchema.safeParse(json);
 
@@ -38,14 +48,15 @@ export async function POST(req: Request) {
     const { error } = data;
 
     return NextResponse.json(
-      { message: "Invalid request", error },
+      { message: "invalid request", error },
       { status: 400 },
     );
   }
 
   const { email } = data.data;
 
-  const decision = await aj.protect(req, { email });
+  const fingerprint = req.ip!;
+  const decision = await aj.protect(req, { fingerprint, email });
 
   console.log("Arcjet decision: ", decision);
 
@@ -82,7 +93,7 @@ export async function POST(req: Request) {
       if (reset === undefined) {
         return NextResponse.json(
           {
-            message: "Too many requests. Please try again later.",
+            message: "too many requests. Please try again later.",
             reason: decision.reason,
           },
           { status: 429 },
@@ -96,7 +107,7 @@ export async function POST(req: Request) {
       if (minutes > 1) {
         return NextResponse.json(
           {
-            message: `Too many requests. Please try again in ${minutes} minutes.`,
+            message: `too many requests. Please try again in ${minutes} minutes.`,
             reason: decision.reason,
           },
           { status: 429 },
@@ -104,7 +115,7 @@ export async function POST(req: Request) {
       } else {
         return NextResponse.json(
           {
-            message: `Too many requests. Please try again in ${seconds} seconds.`,
+            message: `too many requests. Please try again in ${seconds} seconds.`,
             reason: decision.reason,
           },
           { status: 429 },
@@ -112,6 +123,22 @@ export async function POST(req: Request) {
       }
     } else {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+  } else if (decision.isErrored()) {
+    console.error("Arcjet error:", decision.reason);
+    if (decision.reason.message == "[unauthenticated] invalid key") {
+      return NextResponse.json(
+        {
+          message:
+            "invalid Arcjet key. Is the ARCJET_KEY environment variable set?",
+        },
+        { status: 500 },
+      );
+    } else {
+      return NextResponse.json(
+        { message: "internal server error: " + decision.reason.message },
+        { status: 500 },
+      );
     }
   }
 
